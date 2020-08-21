@@ -15,6 +15,8 @@ class ImageChecker:
         self.pbar = tqdm(total=len(imgs), postfix='current progress')
         self.dels = []
 
+        self.plt = None
+
         ca = plt.gca()
 
         ax_del = plt.axes([0.7, 0.0, 0.1, 0.075])
@@ -35,11 +37,11 @@ class ImageChecker:
     def on_del(self, event=None):
         self.dels.append(self.imgs[self.idx])
         self.idx += 1
-        self.show()
+        self.show(event)
 
     def on_pass(self, event=None):
         self.idx += 1
-        self.show()
+        self.show(event)
 
     def on_stop(self, event=None):
         self.pbar.close()
@@ -49,7 +51,7 @@ class ImageChecker:
         self.pbar.close()
         plt.close('all')
 
-    def show(self):
+    def show(self, event=None):
         if len(self.imgs) <= self.idx:
             self.on_stop()
             return
@@ -57,5 +59,16 @@ class ImageChecker:
         self.pbar.refresh()
 
         img = mimg.imread(self.imgs[self.idx], format='jpeg')
-        plt.imshow(img)
-        plt.show()
+
+        # performance issue
+        # 1. use set_data instead of imshow: causes lagging.
+        # 2. use canvas.draw instead of show: causes maximum recursion depth.
+        if self.plt is None:
+            self.plt = plt.imshow(img, interpolation=None)
+        else:
+            self.plt.set_data(img)
+
+        if event is None:
+            plt.show()
+        else:
+            event.canvas.draw()
