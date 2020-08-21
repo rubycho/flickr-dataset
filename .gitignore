@@ -139,3 +139,7 @@ cython_debug/
 
 # intellij
 .idea/
+
+# tmp
+tmp_*/
+config.json
