@@ -1,34 +1,50 @@
-from tqdm import tqdm
+import os
+import io
+import requests
+
+from typing import List
+from PIL import Image, ImageOps
+
 from flickrapi import FlickrAPI
+from tqdm import tqdm
 
 
 class FlickrDownloader:
     def __init__(self, api_key: str, api_secret: str):
         self.flickr = FlickrAPI(api_key, api_secret, format='parsed-json')
 
-    def search(self, keyword: str, img_num: int = 1000, offset: int = 0):
+    def search(self, keyword: str, sp: int, ep: int):
         per_page = 100
-        pbar = tqdm(total=img_num, postfix='fetching image urls')
+        pbar = tqdm(range(sp, ep+1), postfix='fetching image urls')
 
-        page = (offset // per_page) + 1
-        curr_img_num = 0
-        extras = 'url_q'
+        extras = 'url_z'
 
         data = []
-        while curr_img_num < img_num:
+        for p in pbar:
             result = self.flickr.photos.search(
                 text=keyword,
-                per_page=per_page, page=page,
+                per_page=per_page, page=p,
                 sort='relevance', extras=extras
             )
 
-            if int(result['photos']['page']) != page:
+            if int(result['photos']['page']) != p:
                 break
 
-            data = data + [item['url_q'] for item in result['photos']['photo']]
-            curr_img_num = len(data)
+            data = data + [item['url_z'] for item in result['photos']['photo'] if 'url_z' in item]
+        pbar.close()
 
-            pbar.n = len(data)
+        print('total: %d images.' % len(data))
+        return data
+
+    def download(self, path: str, urls: List[str], size: tuple = (300, 300)):
+        pbar = tqdm(total=len(urls), postfix='downloading images')
+        for idx, url in enumerate(urls):
+            r = requests.get(url)
+
+            img = Image.open(io.BytesIO(r.content))
+            th = ImageOps.fit(img, size, Image.ANTIALIAS)
+            th.save(str(os.path.join(path, str(idx) + '.jpg')))
+
+            pbar.n = idx + 1
             pbar.refresh()
         pbar.close()
-        return data
