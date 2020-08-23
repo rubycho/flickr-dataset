@@ -36,7 +36,7 @@ class FlickrDownloader:
         print('total: %d images.' % len(data))
         return data
 
-    def download(self, path: str, urls: List[str], size: tuple = (300, 300)):
+    def download(self, path: str, urls: List[str], size: tuple = (128, 128)):
         pbar = tqdm(total=len(urls), postfix='downloading images')
         for idx, url in enumerate(urls):
             r = requests.get(url)
