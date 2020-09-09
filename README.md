@@ -25,12 +25,14 @@
   "API_KEY": "[YOUR FLICKR API KEY]",
   "API_SECRET": "[YOUR FLICKR SECRET KEY]",
   "KEYWORD": "kitten",
-  "SIZE": 128, // min 128, max 640
+  "SIZE": 128,
   "START_PAGE": 1,
   "END_PAGE": 10
 }
-
 ```
+
+The SIZE should be bigger than or equal to 128,
+smaller than or equal to 640.
 
 #### Download images massively
 
