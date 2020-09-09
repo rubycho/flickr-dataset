@@ -1,74 +1,91 @@
 import os
+import sys
 
 from typing import List
-from tqdm import tqdm
 
-import matplotlib.pyplot as plt
-import matplotlib.image as mimg
-import matplotlib.widgets as widgets
+from PySide2 import QtCore, QtWidgets, QtGui
 
 
-class ImageChecker:
-    def __init__(self, imgs: List[str]):
+class ImageChecker(QtWidgets.QWidget):
+    def __init__(self, paths: List[str]):
+        super().__init__()
+
         self.idx = 0
-        self.imgs = imgs
-        self.pbar = tqdm(total=len(imgs), postfix='current progress')
-        self.dels = []
+        self.paths = paths
+        self.path_len = len(self.paths)
 
-        self.plt = None
+        self.history = dict()
+        for path in paths:
+            self.history[path] = False
 
-        ca = plt.gca()
+        self.marked_text = 'Will be deleted: YES'
+        self.unmarked_text = 'Will be deleted: NO'
 
-        ax_del = plt.axes([0.7, 0.0, 0.1, 0.075])
-        ax_pass = plt.axes([0.8, 0.0, 0.1, 0.075])
-        ax_stop = plt.axes([0.9, 0.0, 0.1, 0.075])
+        self.status = QtWidgets.QLabel('')
+        self.path_status = QtWidgets.QLabel('')
+        self.marked = QtWidgets.QLabel('')
 
-        btn_del = widgets.Button(ax_del, 'DEL')
-        btn_pass = widgets.Button(ax_pass, 'PASS')
-        btn_stop = widgets.Button(ax_stop, 'STOP')
+        self.image = QtWidgets.QLabel(self)
+        self.image.setAlignment(QtCore.Qt.AlignCenter)
 
-        btn_del.on_clicked(self.on_del)
-        btn_pass.on_clicked(self.on_pass)
-        btn_stop.on_clicked(self.on_stop)
+        self.mark_btn = QtWidgets.QPushButton('Mark/Unmark')
+        self.mark_btn.clicked.connect(self.on_mark)
 
-        plt.sca(ca)
-        self.show()
+        self.prev_btn = QtWidgets.QPushButton('Prev')
+        self.prev_btn.clicked.connect(self.on_prev)
 
-    def on_del(self, event=None):
-        self.dels.append(self.imgs[self.idx])
+        self.next_btn = QtWidgets.QPushButton('Next')
+        self.next_btn.clicked.connect(self.on_next)
+
+        self.stop_btn = QtWidgets.QPushButton('Stop')
+        self.stop_btn.clicked.connect(self.on_stop)
+
+        self.btn_layout = QtWidgets.QHBoxLayout()
+        self.btn_layout.addWidget(self.mark_btn)
+        self.btn_layout.addWidget(self.prev_btn)
+        self.btn_layout.addWidget(self.next_btn)
+        self.btn_layout.addWidget(self.stop_btn)
+
+        self.layout = QtWidgets.QVBoxLayout()
+        self.layout.addWidget(self.status)
+        self.layout.addWidget(self.path_status)
+        self.layout.addWidget(self.marked)
+        self.layout.addWidget(self.image)
+        self.layout.addLayout(self.btn_layout)
+
+        self.setLayout(self.layout)
+        self.on_click()
+
+    def on_mark(self):
+        path = self.paths[self.idx]
+        self.history[path] = not self.history[path]
+        self.on_click()
+
+    def on_prev(self):
+        self.idx -= 1
+        self.on_click()
+
+    def on_next(self):
         self.idx += 1
-        self.show(event)
+        self.on_click()
 
-    def on_pass(self, event=None):
-        self.idx += 1
-        self.show(event)
+    def on_stop(self):
+        self.setEnabled(False)
+        for path in self.paths:
+            if self.history[path]:
+                os.remove(path)
+                print('Removed %s.' % path)
+        sys.exit(0)
 
-    def on_stop(self, event=None):
-        self.pbar.close()
-        self.pbar = tqdm(self.dels, postfix='removing files')
-        for img in self.pbar:
-            os.remove(img)
-        self.pbar.close()
-        plt.close('all')
+    def on_click(self):
+        self.status.setText('Current %d / Total %d' % (self.idx + 1, self.path_len))
 
-    def show(self, event=None):
-        if len(self.imgs) <= self.idx:
-            self.on_stop()
-            return
-        self.pbar.n = self.idx
-        self.pbar.refresh()
+        path = self.paths[self.idx]
+        self.path_status.setText('Path: %s' % path)
+        self.marked.setText(self.marked_text if self.history[path] else self.unmarked_text)
 
-        img = mimg.imread(self.imgs[self.idx], format='jpeg')
+        pixmap = QtGui.QPixmap(path)
+        self.image.setPixmap(pixmap)
 
-        # performance issue
-        # 1. use set_data instead of imshow: causes lagging.
-        # 2. use canvas.draw instead of show: causes maximum recursion depth.
-        if self.plt is None:
-            self.plt = plt.imshow(img, interpolation=None)
-        else:
-            self.plt.set_data(img)
-
-        if event is None:
-            plt.show()
-        else:
-            event.canvas.draw()
+        self.next_btn.setEnabled(self.idx + 1 < self.path_len)
+        self.prev_btn.setEnabled(self.idx > 0)

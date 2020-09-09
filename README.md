@@ -5,7 +5,7 @@
 ### Functions
 
 - Download images by keyword from flickr (command: `download`).
-- View individual images with matplotlib, delete image by plot button (command: `check`).
+- View individual images, select images to delete (command: `check`).
 
 ### How to use
 
@@ -16,39 +16,46 @@
     ```
     pip install -r requirements.txt
     ```
-1. Copy `config.example.json` as `config.json` and fill out with your Flickr API Keys.
+1. Copy `config.example.json` as `config.json` and fill out.
+
+#### Configuration File
+
+```json
+{
+  "API_KEY": "[YOUR FLICKR API KEY]",
+  "API_SECRET": "[YOUR FLICKR SECRET KEY]",
+  "KEYWORD": "kitten",
+  "SIZE": 128, // min 128, max 640
+  "START_PAGE": 1,
+  "END_PAGE": 10
+}
+
+```
 
 #### Download images massively
 
 ```
-python main.py download --keyword "kitten" --sp 1 --ep 5
+python main.py download
 ```
 
-There are three major parameters.
+approx. (END_PAGE - START_PAGE + 1) * 100 images will be downloaded.
 
-- keyword: keyword to search
-- sp: start page
-- ep: end page
-
-approx. (ep - sp + 1) * 100 images will be downloaded.
-
-Size of the image is (128, 128). 
-If you want to download images in bigger size,
-check parameter `size` of `FlickrDownloader.download` method.
+![](.github/download.PNG)
 
 #### Check images one by one
 
 ```
-python main.py check --keyword "kitten"
+python main.py check
 ```
 
-The window (with matplotlib) will show up,
-and images located in `tmp_kitten` will be shown on the window one by one.
+The Qt window will show up,
+and images located in `tmp_{KEYWORD}` will be shown on the window one by one.
 
-There are three buttons available.
+There are four buttons available.
 
-![](.github/capture.png)
+![](.github/check.PNG)
 
-- "DEL" will mark the current image to be deleted and show the next image.
-- "PASS" will show the next image.
-- "STOP" will close the window, and delete all marked images.
+- Mark/Unmark: Mark or Unmark image.
+- Prev: Show previous image.
+- Next: Show next image.
+- Stop: Stop, and remove all marked images.
