@@ -1,3 +1,8 @@
+**[WARNING]**
+
+- This repository is now archived.
+- Please check the Kotlin implementation, [FlickrDataset](https://github.com/rubycho/FlickrDataset/).
+
 ## flickr-dataset
 
 **Simple** python script for downloading massive images from flickr.
